@@ -1,0 +1,83 @@
+---
+title: "Practical_Machine_Learning_Assignment"
+author: "Submitted by Sabeeh Ashhar"
+date: "April 30, 2016"
+output: html_document
+---
+
+This is an R Markdown document for Practical Machine Learning Assignment uisng HAR classification dataset. 
+```{r, echo=FALSE}
+#############Loading Required Libraries
+library(caret);library(randomForest)
+```
+
+
+```{r, echo=FALSE}
+############Downlaoding Training & Test Data from website
+train_dwnld<-read.csv("https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv")
+test_dwnld<-read.csv("https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv")
+```
+
+
+```{r, echo=FALSE}
+############Cleaning Training & Test Data
+train_dwnld <- train_dwnld[, colSums(is.na(train_dwnld)) == 0] 
+test_dwnld <- test_dwnld[, colSums(is.na(test_dwnld)) == 0]
+classe <- train_dwnld$classe
+trainRemove <- grepl("^X|timestamp|window", names(train_dwnld))
+train_dwnld <- train_dwnld[, !trainRemove]
+trainCleaned <- train_dwnld[, sapply(train_dwnld, is.numeric)]
+trainCleaned$classe <- classe
+testRemove <- grepl("^X|timestamp|window", names(test_dwnld))
+test_dwnld <- test_dwnld[, !testRemove]
+testCleaned <- test_dwnld[, sapply(test_dwnld, is.numeric)]
+nearZeroVar(trainCleaned)
+```
+
+```{r, echo=FALSE}
+############Creating Data Partition for Mdoeling
+set.seed(1000) #for reproduction purpose
+inTrain <- createDataPartition(trainCleaned$classe, p=0.80, list=F)
+trainData <- trainCleaned[inTrain, ]
+testData <- trainCleaned[-inTrain, ]
+```
+
+
+```{r, echo=FALSE}
+############Setting parameters for 10 fold Cross Validation
+controlRf <- trainControl(method="cv", 10)
+```
+
+
+```{r, echo=FALSE}
+############Modeling using Random Forest
+modelRf <- train(classe ~ ., data=trainData, method="rf", trControl=controlRf, ntree=200)
+```
+
+
+```{r, echo=FALSE}
+############Creating Confusion Matrix for Random Forest Model
+predictRf <- predict(modelRf, testData)
+confusionMatrix(testData$classe, predictRf)
+```
+
+
+```{r, echo=FALSE}
+############Calculating Accuracy for Random Forest Model
+postResample(predictRf, testData$classe)
+1 - as.numeric(confusionMatrix(testData$classe, predictRf)$overall[1])
+```
+
+
+```{r, echo=FALSE}
+############Determining Variable Importance for Random Forest Model
+order(varImp(modelRf)$importance,decreasing=T)[c(1,2)]
+names(trainData[,c(1,3)])
+```
+
+
+```{r, echo=FALSE}
+############Generating Final Result set for raw test data using Random Forest Model
+result_test <- predict(modelRf, testCleaned[,-length(names(testCleaned))])
+result_test
+```
