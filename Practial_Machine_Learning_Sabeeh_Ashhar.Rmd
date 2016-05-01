@@ -63,7 +63,7 @@ confusionMatrix(testData$classe, predictRf)
 
 
 ```{r, echo=FALSE}
-############Calculating Accuracy for Random Forest Model using OOB Error tested on set aside data(20%)
+############Calculating Cross Validation Accuracy for Random Forest Model using OOB Error tested on set aside data(20%)
 postResample(predictRf, testData$classe)
 1 - as.numeric(confusionMatrix(testData$classe, predictRf)$overall[1])
 ```
